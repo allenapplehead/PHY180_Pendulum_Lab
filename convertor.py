@@ -85,6 +85,8 @@ for line in f:
             # set the initial angle
             theta_initial = cur_ang
             tgt_angle = theta_initial * math.e ** (-math.pi / decay)
+            print("Initial amplitude:", theta_initial)
+            print("Target amplitude:", tgt_angle)
         
         # Detect max angles
         if (counter == 2) or shutoff == 0 and len(pastAngles) >= r and abs(pastAngles[-(r // 2 + 1)]) >= abs(pastAngles[-1]) and abs(pastAngles[-(r // 2 + 1)]) >= abs(pastAngles[-r]):
