@@ -10,13 +10,14 @@ import math
 ## Variables for calculating Q
 theta_initial = 1e9 # will be updated later in the program
 tgt_angle = 1e9 # = theta_initial * e^(-pi/decay), updated later in program
-decay = 4.0 # e^-pi/4
+decay = 3.0 # e^-pi/decay
 osc = 0 # variable to count number of half-periods (half-oscillations) ie: swinging from
         # one extreme to another
 
 # Uncertainties
-t_unc = 0.033
-ang_unc = 0.001
+t_unc = 0.033 / 2.0 # Half frame rate estimate for time uncertainty
+delta_x = 1.319
+delta_y = 0.8215
 
 # Take every n frames
 skip = 1
@@ -25,10 +26,11 @@ skip = 1
 samples = -1
 
 # List and variables to help recognize when the bob has swung to one extreme or another
-# Noise is taken into account and mitigated through recording the last 5 values,
-# and verifying that the value 3 values ago is larger than the last value and
-# the value 5 values ago. This irons out minor fluctuations in the angle from 
+# Noise is taken into account and mitigated through recording the last r values,
+# and verifying that the value r // 2 + 1 values ago is larger than the last value and
+# the value r values ago. This irons out minor fluctuations in the angle from 
 # raw tracker data
+r = 5 # Make sure r is an odd number
 pastAngles = [] # Keeps the 5 most recent angles
 blockout = 5 # Stop looking for amplitude for the next n frames after detecting one
 shutoff = 0
@@ -40,7 +42,12 @@ new_data = [] # Format: time, angle, unc_time, unc_angle
 counter = 0 # Number of lines parsed
 prev_ang = 1e9 # Stores previous angle
 
+killLoop = False
+
 for line in f:
+    if killLoop:
+        break
+
     # Only take samples samples
     if samples > 0 and (counter - 2) > samples:
         break
@@ -61,12 +68,18 @@ for line in f:
         # and the vertical
         # v = [0, -1]
         # w = [l[1],l[2]]
+        x = float(l[1])
+        y = float(l[2])
         sgn = 1
-        tmp = -1 * float(l[2]) / (1 * math.sqrt(float(l[1]) ** 2 + float(l[2]) ** 2))
-        if float(l[1]) < 0:
+        tmp = -1 * y / (math.sqrt(x ** 2 + y ** 2))
+
+        # Propagate the associated uncertainty
+        delta_theta = abs(max(delta_y / y, max(delta_x / x * x ** 2, delta_y / y * y ** 2) / (x ** 2 + y ** 2)) * tmp)
+
+        if x < 0:
             sgn *= -1
         cur_ang = sgn * float(math.acos(tmp))
-        upd = [float(l[0]), cur_ang, t_unc, ang_unc]
+        upd = [float(l[0]), cur_ang, t_unc, delta_theta]
         
         if theta_initial == 1e9:
             # set the initial angle
@@ -74,17 +87,11 @@ for line in f:
             tgt_angle = theta_initial * math.e ** (-math.pi / decay)
         
         # Detect max angles
-        if (counter == 2) or shutoff == 0 and len(pastAngles) >= 5 and abs(pastAngles[-3]) > abs(pastAngles[-1]) and abs(pastAngles[-3]) > abs(pastAngles[-5]):
-            """
-            if len(pastAngles) >= 5:
-                print("Last 5 values:")
-                for i in range(1, 6):
-                    print(pastAngles[-i], "Counter:", counter - i)
-            """
+        if (counter == 2) or shutoff == 0 and len(pastAngles) >= r and abs(pastAngles[-(r // 2 + 1)]) >= abs(pastAngles[-1]) and abs(pastAngles[-(r // 2 + 1)]) >= abs(pastAngles[-r]):
             osc += 1
             shutoff = blockout
-            if len(pastAngles) >= 5 and pastAngles[-3] <= tgt_angle:
-                samples = 1e9 # The program will stop running once it finishes this iteration of the loop
+            if len(pastAngles) >= r and abs(pastAngles[-(r // 2 + 1)]) <= abs(tgt_angle):
+                killLoop = True # The program will stop running once it finishes this iteration of the loop
 
         pastAngles.append(cur_ang)
         new_data.append(upd)
