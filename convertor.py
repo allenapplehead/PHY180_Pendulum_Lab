@@ -20,7 +20,7 @@ delta_x = 1.319
 delta_y = 0.8215
 
 # Take every n frames
-skip = 1
+skip = 2
 
 # Take how many samples? -1 means take as many samples as there are from tracker raw data
 samples = -1
@@ -32,7 +32,7 @@ samples = -1
 # raw tracker data
 r = 5 # Make sure r is an odd number
 pastAngles = [] # Keeps the 5 most recent angles
-blockout = 5 # Stop looking for amplitude for the next n frames after detecting one
+blockout = 10 # Stop looking for amplitude for the next n frames after detecting one
 shutoff = 0
 
 # Open the raw data from tracker
