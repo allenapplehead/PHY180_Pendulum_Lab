@@ -25,6 +25,10 @@ delta_y = 0.8215 * 0.01
 # Take every n frames
 skip = 2
 
+# Only start taking data once the amplitude is the below value
+theta_thres = 0.80
+begin_logging = False
+
 # Take how many samples? -1 means take as many samples as there are from tracker raw data
 samples = -1
 
@@ -36,7 +40,7 @@ shutoff = 0
 t_offset = 0
 
 # Open the raw data from tracker
-f = open("t0.txt", "r")
+f = open("t2.txt", "r")
 
 new_data = [] # Format: time, angle, unc_time, unc_angle
 counter = 0 # Number of lines parsed
@@ -82,27 +86,29 @@ for line in f:
 
         upd = [float(l[0]), cur_ang, t_unc, delta_theta]
         
-        if theta_initial == 1e9:
-            # set the initial angle
-            theta_initial = cur_ang
-            tgt_angle = theta_initial * math.e ** (-math.pi / decay)
-            # assume the first angle is always a max angle
-            osc += 1
-            # account for time offsets
-            if upd[0] != 0:
-                t_offset = upd[0]
-            print("Initial amplitude:", theta_initial)
-            print("Target amplitude:", tgt_angle)
-        
+        #print("DEBUG:", cur_ang)
+
         # Detect max angles
-        if (counter == 2) or shutoff == 0 and prev_ang != 1e9 and detect_amplitude(cur_ang):
+        if (counter == 2) or (shutoff == 0 and prev_ang != 1e9 and detect_amplitude(cur_ang)):
             osc += 1
             shutoff = blockout
 
-            if abs(cur_ang) <= abs(tgt_angle):
+            if not begin_logging and abs(cur_ang) <= theta_thres:
+                begin_logging = True
+                # set the initial and target angle
+                theta_initial = cur_ang
+                tgt_angle = theta_initial * math.e ** (-math.pi / decay)
+                print("Initial amplitude:", theta_initial)
+                print("Target amplitude:", tgt_angle)
+
+                # account for time offsets
+                if upd[0] != 0:
+                    t_offset = upd[0]
+
+            if begin_logging and abs(cur_ang) <= abs(tgt_angle):
                 killLoop = True # The program will stop running once it finishes this iteration of the loop
 
-        if ampOnly and shutoff == blockout or not ampOnly:
+        if begin_logging and (ampOnly and shutoff == blockout or not ampOnly):
             if ampOnly:
                 upd[1] = upd[1]
             upd[0] -= t_offset
