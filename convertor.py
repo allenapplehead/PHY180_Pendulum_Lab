@@ -19,8 +19,8 @@ osc = 0 # variable to count number of half-periods (half-oscillations) ie: swing
 
 # Uncertainties
 t_unc = 0.5 * 1.0 / 30.0 # Half frame rate estimate for time uncertainty
-delta_x = 1.319
-delta_y = 0.8215
+delta_x = 1.319 * 0.01
+delta_y = 0.8215 * 0.01
 
 # Take every n frames
 skip = 2
@@ -28,17 +28,15 @@ skip = 2
 # Take how many samples? -1 means take as many samples as there are from tracker raw data
 samples = -1
 
-# List and variables to help recognize when the bob has swung to one extreme or another
-# Noise is taken into account and mitigated through the r value
-# Basically what it does is to make sure that a value is an amplitude only if the next
-# r - 1 angles are strict less that the current angles in magnitude
-r = 4
-pastAngles = [] # Keeps the 5 most recent angles
+delta_thres = 0.05
 blockout = 10 # Stop looking for amplitude for the next n frames after detecting one
 shutoff = 0
 
+# If data is not taken exactly at the beginning
+t_offset = 0
+
 # Open the raw data from tracker
-f = open("data.txt", "r")
+f = open("t0.txt", "r")
 
 new_data = [] # Format: time, angle, unc_time, unc_angle
 counter = 0 # Number of lines parsed
@@ -46,13 +44,10 @@ prev_ang = 1e9 # Stores previous angle
 
 killLoop = False
 
-def detect_amplitude(r):
-    for i in range(r):
-        if i == 0:
-            pass
-        if abs(pastAngles[-r]) < abs(pastAngles[-r + i]):
-            return False
-    return True
+def detect_amplitude(cur_ang):
+    if abs(cur_ang) - abs(prev_ang) <= delta_thres:
+        return True
+    return False
 
 for line in f:
     if killLoop:
@@ -91,23 +86,30 @@ for line in f:
             # set the initial angle
             theta_initial = cur_ang
             tgt_angle = theta_initial * math.e ** (-math.pi / decay)
+            # assume the first angle is always a max angle
+            osc += 1
+            # account for time offsets
+            if upd[0] != 0:
+                t_offset = upd[0]
             print("Initial amplitude:", theta_initial)
             print("Target amplitude:", tgt_angle)
         
         # Detect max angles
-        if (counter == 2) or shutoff == 0 and len(pastAngles) >= r and detect_amplitude(r):
+        if (counter == 2) or shutoff == 0 and prev_ang != 1e9 and detect_amplitude(cur_ang):
             osc += 1
             shutoff = blockout
 
-            if len(pastAngles) >= r and abs(pastAngles[-r]) <= abs(tgt_angle):
+            if abs(cur_ang) <= abs(tgt_angle):
                 killLoop = True # The program will stop running once it finishes this iteration of the loop
-
-        pastAngles.append(cur_ang)
 
         if ampOnly and shutoff == blockout or not ampOnly:
             if ampOnly:
-                upd[1] = abs(upd[1])
+                upd[1] = upd[1]
+            upd[0] -= t_offset
             new_data.append(upd)
+
+        prev_ang = cur_ang
+
     counter += 1
 
 print("Parsed", counter - 2, "lines.")

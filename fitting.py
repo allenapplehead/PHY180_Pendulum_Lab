@@ -8,7 +8,6 @@ Do NOT put commas in your data file!!
 The data file should be in the same directory as this python file
 The data should be in the order:
 x_data y_data x_uncertainty y_uncertainty
-
 Then this program tries to fit a function to the data points
 It plots the data as dots with errorbars and the best fit line
 It then prints the best fit information
@@ -18,7 +17,6 @@ what is "left over" from the fit
 Ideally your residuals graph should look like noise, otherwise there is more
 information you could extract from your data (or you used the wrong fitting
 function)
-
 If you want to change the file name, that's the next line below this comment
 """
 
@@ -47,7 +45,7 @@ def my_func(t,a,tau,T,phi):
 # this is the function we want to fit. the first variable must be the
 # x-data (time), the rest are the unknown constants we want to determine
 
-init_guess=(2,100,2,0)
+init_guess=(1,80,2,0)
 # your initial guess of (a,tau,T,phi)
 
 popt, pcov = optimize.curve_fit(my_func, xdata, ydata, p0=init_guess, maxfev = 1000000)
