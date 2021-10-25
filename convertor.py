@@ -40,7 +40,8 @@ shutoff = 0
 t_offset = 0
 
 # Open the raw data from tracker
-f = open("t2.txt", "r")
+fileName = "t0"
+f = open(fileName + ".txt", "r")
 
 new_data = [] # Format: time, angle, unc_time, unc_angle
 counter = 0 # Number of lines parsed
@@ -93,7 +94,7 @@ for line in f:
             osc += 1
             shutoff = blockout
 
-            if not begin_logging and abs(cur_ang) <= theta_thres:
+            if not begin_logging and cur_ang >= 0 and cur_ang <= theta_thres:
                 begin_logging = True
                 # set the initial and target angle
                 theta_initial = cur_ang
@@ -127,7 +128,7 @@ print("Full oscillations to get to e^(-pi/" + str(decay) + "):", full_osc)
 f.close()
 
 # Write the data in a properly formatted way to the output file
-g = open("out.txt", "w")
+g = open(fileName + "out.txt", "w")
 
 for line in new_data:
     for i in range(4):

@@ -20,7 +20,7 @@ function)
 If you want to change the file name, that's the next line below this comment
 """
 
-filename="out.txt"
+filename="MASTER_DATA.txt"
 # change this if your filename is different
 
 
@@ -45,7 +45,7 @@ def my_func(t,a,tau,T,phi):
 # this is the function we want to fit. the first variable must be the
 # x-data (time), the rest are the unknown constants we want to determine
 
-init_guess=(1,80,2,0)
+init_guess=(5,80,2,2)
 # your initial guess of (a,tau,T,phi)
 
 popt, pcov = optimize.curve_fit(my_func, xdata, ydata, p0=init_guess, maxfev = 1000000)
@@ -78,7 +78,8 @@ fig.subplots_adjust(hspace=0.6)
 
 ax1.errorbar(xdata,ydata,yerr=yerror,xerr=xerror,fmt=".")
 # plot the data, fmt makes it data points not a line
-ax1.plot(xs,curve)
+ax1.plot(xs,curve, label="Decaying sinusoid best fit line")
+ax1.legend()
 # plot the best fit curve on top of the data points as a line
 
 ax1.set_xlabel("Time Elapsed (s)")
@@ -103,7 +104,8 @@ zerolinex=[start,stop]
 
 ax2.errorbar(xdata,residual,yerr=yerror,xerr=xerror,fmt=".")
 # plot the residuals with error bars
-ax2.plot(zerolinex,zeroliney)
+ax2.plot(zerolinex,zeroliney, label="y=0")
+ax2.legend()
 # plotnthe y=0 line on top
 
 ax2.set_xlabel("Time Elapsed (s)")
