@@ -8,7 +8,7 @@
 import math
 
 ## Toggle this to generate data for the decaying amplitude graph
-ampOnly = False
+ampOnly = True
 
 ## Variables for calculating Q
 theta_initial = 1e9 # will be updated later in the program
@@ -83,7 +83,7 @@ for line in f:
         cur_ang = math.atan(x / y)
 
         # Propagate the associated uncertainty
-        delta_theta = abs(max(delta_x / x, delta_y / y) * cur_ang)
+        delta_theta = abs(max(delta_x / abs(x), delta_y / abs(y)) * cur_ang)
 
         upd = [float(l[0]), cur_ang, t_unc, delta_theta]
         
@@ -109,9 +109,14 @@ for line in f:
             if begin_logging and abs(cur_ang) <= abs(tgt_angle):
                 killLoop = True # The program will stop running once it finishes this iteration of the loop
 
-        if begin_logging and (ampOnly and shutoff == blockout or not ampOnly):
             if ampOnly:
-                upd[1] = upd[1]
+                # If we want to graph amplitudes only, then we discard any non-amplitude values
+                upd[1] = abs(upd[1])
+                upd[0] -= t_offset
+                new_data.append(upd)
+        elif ampOnly:
+            pass
+        elif begin_logging:
             upd[0] -= t_offset
             new_data.append(upd)
 
