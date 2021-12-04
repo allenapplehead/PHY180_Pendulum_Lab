@@ -40,7 +40,7 @@ shutoff = 0
 t_offset = 0
 
 # Open the raw data from tracker
-fileName = "t0"
+fileName = "t2"
 f = open(fileName + ".txt", "r")
 
 new_data = [] # Format: time, angle, unc_time, unc_angle
